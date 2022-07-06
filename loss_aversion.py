@@ -40,7 +40,6 @@ def get_demographics(task, codes):
             ii[0] = ii[0].strip()
 
             if not ii[0] in codes:
-               print(ii[0])
                continue
 
             gender.append(0 if ii[5].strip() == 'M' else 1)
@@ -84,12 +83,13 @@ def get_demographics(task, codes):
             ii[0] = ii[0].strip()
 
             if not ii[0] in codes:
-               print(ii[0])
                continue
 
             dic_gender[ii[0]]=float(ii[7].strip())
             dic_age[ii[0]]=float(ii[8].strip())
+            
             dic_iq[ii[0]]=float(ii[10].strip()) if ii[10].strip().isnumeric() else np.nan
+
             dic_stai1[ii[0]]=float(ii[11].strip())
             dic_stai2[ii[0]]=float(ii[12].strip())
             dic_shock[ii[0]]=np.nan
@@ -103,7 +103,6 @@ def get_demographics(task, codes):
             else:
                dic_rt_threat[ii[0]] = float(ii[6].strip())/1000
 
-
       with open('LA1_master_leo.csv') as file:
 
          reader=csv.reader(file)
@@ -112,7 +111,6 @@ def get_demographics(task, codes):
          for ii in reader:
 
             if not ii[0].replace('LA1','') in codes:
-               print(ii[0])
                continue
 
             try:
@@ -123,7 +121,8 @@ def get_demographics(task, codes):
                dic_masq_gdd[ii[0]]=float(ii[33].strip())  if ii[33].isnumeric() else np.nan
                dic_masq_ad[ii[0]] =float(ii[34].strip())  if ii[34].isnumeric() else np.nan
             except:
-               pdb.set_trace()
+               pass
+               #pdb.set_trace()
 
          gender = list(dic_gender.values())
          age = list(dic_age.values())
@@ -138,6 +137,7 @@ def get_demographics(task, codes):
          masq_ad = list(dic_masq_ad.values())
          rt_safe = list(dic_rt_safe.values())
          rt_threat = list(dic_rt_threat.values())
+
 
    return gender,age,iq,stai1,stai2,bai,shock,masq_gda,masq_aa,masq_gdd,masq_ad,rt_safe,rt_threat
 
@@ -358,24 +358,45 @@ def p_gamble_accept(x_gain, x_loss, x_sure, mu, rho, lambd):
                                           - u(x_sure,lambd,rho) ) ) )
 
 
-
 def med_opt_params(fits, thr):
 
 
-   out = [(ii[0],ii[1],ii[2]) for ii in fits]
-   params,pvals,f=zip(*out)
+   out = [(ii[0],ii[1]) for ii in fits]
 
-   f = np.array(f)
+   params,f=zip(*out)
+
+   #z=[len(ii.shape) for ii in f]
+   #print(z)
+   #print(all(z))
+
+   try:
+      f = np.array(f)
+   except:
+      pass
+      #pdb.set_trace()
+
+   if len(f.shape) > 2:
+      print(f.shape)
+      f=np.squeeze(f)
+      #pdb.set_trace()
+ 
+
 
    params=np.array(params)
    opt_params = []
    sel=[]
+
    for kk in f.T:
-      sel.append (kk <= np.nanpercentile(kk,thr))
-   
+      try:
+         sel.append (kk <= np.nanpercentile(kk,thr))
+      except:
+         #pdb.set_trace()
+         pass
+
    opt_params = np.array([np.nanmean(params[ii,ss],0) if len(ii) > 0 else np.nan*3 for ss,ii in enumerate(sel)])
 
-   ll=[np.nanmedian(f[:,ii][sel[ii]]) for ii in range(len(sel))]
+   ll=[np.nanmean(f[:,ii][sel[ii]]) for ii in range(len(sel))]
+
 
    return opt_params, np.array(ll)
 
@@ -558,49 +579,6 @@ if __name__ == '__main__' :
    stai2_a_la1     = np.array(stai2_a_la1)
    stai2_a_la2     = np.array(stai2_a_la2)
    
-
-   age_a_la1       = age_a_la1[~np.isnan(age_a_la1)]
-   age_a_la2       = age_a_la2[~np.isnan(age_a_la2)]
-   iq_a_la1        = iq_a_la1[~np.isnan(iq_a_la1)]
-   iq_a_la2        = iq_a_la2[~np.isnan(iq_a_la2)]
-   masq_gda_a_la1  = masq_gda_a_la1[~np.isnan(masq_gda_a_la1)]
-   masq_gda_a_la2  = masq_gda_a_la2[~np.isnan(masq_gda_a_la2)]
-   masq_aa_a_la1   = masq_aa_a_la1[~np.isnan(masq_aa_a_la1)]
-   masq_aa_a_la2   = masq_aa_a_la2[~np.isnan(masq_aa_a_la2)]
-   masq_gdd_a_la1  = masq_gdd_a_la1[~np.isnan(masq_gdd_a_la1)]
-   masq_gdd_a_la2  = masq_gdd_a_la2[~np.isnan(masq_gdd_a_la2)]
-   masq_ad_a_la1   = masq_ad_a_la1[~np.isnan(masq_ad_a_la1)]
-   masq_ad_a_la2   = masq_ad_a_la2[~np.isnan(masq_ad_a_la2)]
-   shock_a_la1     = shock_a_la1[~np.isnan(shock_a_la1)]
-   shock_a_la2     = shock_a_la2[~np.isnan(shock_a_la2)]
-   stai1_a_la1     = stai1_a_la1[~np.isnan(stai1_a_la1)]
-   stai1_a_la2     = stai1_a_la2[~np.isnan(stai1_a_la2)]
-   stai2_a_la1     = stai2_a_la1[~np.isnan(stai2_a_la1)]
-   stai2_a_la2     = stai2_a_la2[~np.isnan(stai2_a_la2)]
-
-   age = ([np.nanmean(age_a_la1),np.nanstd(age_a_la1),np.nanmean(age_a_la2),np.nanstd(age_a_la2)] + list(ttest_ind(age_a_la1,age_a_la2)))
-   iq = ([np.nanmean(iq_a_la1),np.nanstd(iq_a_la1),np.nanmean(iq_a_la2),np.nanstd(iq_a_la2)] + list(ttest_ind(iq_a_la1,iq_a_la2)))
-   gda = ([np.nanmean(masq_gda_a_la1),np.nanstd(masq_gda_a_la1),np.nanmean(masq_gda_a_la2),np.nanstd(masq_gda_a_la2)] + list(ttest_ind(masq_gda_a_la1,masq_gda_a_la2)))
-   aa = ([np.nanmean(masq_aa_a_la1),np.nanstd(masq_aa_a_la1),np.nanmean(masq_aa_a_la2),np.nanstd(masq_aa_a_la2)] + list(ttest_ind(masq_aa_a_la1,masq_aa_a_la2)))
-   gdd = ([np.nanmean(masq_gdd_a_la1),np.nanstd(masq_gdd_a_la1),np.nanmean(masq_gdd_a_la2),np.nanstd(masq_gdd_a_la2)] + list(ttest_ind(masq_gdd_a_la1,masq_gdd_a_la2)))
-   ad = ([np.nanmean(masq_ad_a_la1),np.nanstd(masq_ad_a_la1),np.nanmean(masq_ad_a_la2),np.nanstd(masq_ad_a_la2)] + list(ttest_ind(masq_ad_a_la1,masq_ad_a_la2)))
-   shock = ([np.nanmean(shock_a_la1),np.nanstd(shock_a_la1),np.nanmean(shock_a_la2),np.nanstd(shock_a_la2)] + list(ttest_ind(shock_a_la1,shock_a_la2)))
-   stai1 = ([np.nanmean(stai1_a_la1),np.nanstd(stai1_a_la1),np.nanmean(stai1_a_la2),np.nanstd(stai1_a_la2)] + list(ttest_ind(stai1_a_la1,stai1_a_la2)))
-   stai2 = ([np.nanmean(stai2_a_la1),np.nanstd(stai2_a_la1),np.nanmean(stai2_a_la2),np.nanstd(stai2_a_la2)] + list(ttest_ind(stai2_a_la1,stai2_a_la2)))
-
-   tab=[age,iq,gda,aa,gdd,ad,shock,stai1,stai2]
-
-   print('\n'.join(list(map(lambda x : '%.2f (%.2f)\t%.2f (%.2f)\t%.2f\t%.6f'%(x[0],x[1],x[2],x[3],x[4],x[5]),tab))))
-
-   counts_la1 = np.array([np.sum(gender_a_la1),np.sum(gender_h_la1)])
-   nobs_la1   = np.array([len(gender_a_la1),len(gender_h_la1)])
-   print (proportions_ztest(counts_la1,nobs_la1))
-
-   counts_la2 = np.array([np.sum(gender_a_la2),np.sum(gender_h_la2)])
-   nobs_la2   = np.array([len(gender_a_la2),len(gender_h_la2)])
-   print (proportions_ztest(counts_la2,nobs_la2))
-
-   pdb.set_trace()
 
    # Final fit parameters
    healthy_la1_params,_ = med_opt_params(healthy_la1,5)
@@ -874,11 +852,6 @@ if __name__ == '__main__' :
    plt.gca().text(-0.15,1.05,'F',transform=plt.gca().transAxes,fontsize=24,fontweight='bold')
 
 
-   plt.show()
-
-
-
-
    # Group and task
    X = np.empty((len(age_h_la1) + len(age_a_la1) + len(age_h_la2) + len(age_a_la2),2), dtype='S10')
    X[:,0] = 'Task1'
@@ -947,6 +920,7 @@ if __name__ == '__main__' :
    gamb_obs    = np.hstack([obs_h_la1,obs_a_la1,obs_h_la2,obs_a_la2])
    gamb_sim    = np.hstack([sim_h_la1,sim_a_la1,sim_h_la2,sim_a_la2])
 
+
    df = pd.DataFrame(data=X[:,0:2],columns=['Task','Dx'])
    df.insert(2,"Task_1",X_Task1)
    df.insert(3,"Task_2",X_Task2)
@@ -970,12 +944,56 @@ if __name__ == '__main__' :
    df.insert(21,"GAMB_OBS", gamb_obs)
    df.insert(22,"GAMB_SIM", gamb_sim)
 
-   # Median imputation?
-   #df=df.fillna(df.mean())
-
    df[['Dx', 'Gender', 'Task']] = df[['Dx', 'Gender', 'Task']].apply(lambda x: x.astype('category'))
 
+
+   # Generates csv file needed for R
    df.to_csv('df.csv')
 
+   age_a_la1       = age_a_la1[~np.isnan(age_a_la1)]
+   age_a_la2       = age_a_la2[~np.isnan(age_a_la2)]
+   iq_a_la1        = iq_a_la1[~np.isnan(iq_a_la1)]
+   iq_a_la2        = iq_a_la2[~np.isnan(iq_a_la2)]
+   masq_gda_a_la1  = masq_gda_a_la1[~np.isnan(masq_gda_a_la1)]
+   masq_gda_a_la2  = masq_gda_a_la2[~np.isnan(masq_gda_a_la2)]
+   masq_aa_a_la1   = masq_aa_a_la1[~np.isnan(masq_aa_a_la1)]
+   masq_aa_a_la2   = masq_aa_a_la2[~np.isnan(masq_aa_a_la2)]
+   masq_gdd_a_la1  = masq_gdd_a_la1[~np.isnan(masq_gdd_a_la1)]
+   masq_gdd_a_la2  = masq_gdd_a_la2[~np.isnan(masq_gdd_a_la2)]
+   masq_ad_a_la1   = masq_ad_a_la1[~np.isnan(masq_ad_a_la1)]
+   masq_ad_a_la2   = masq_ad_a_la2[~np.isnan(masq_ad_a_la2)]
+   shock_a_la1     = shock_a_la1[~np.isnan(shock_a_la1)]
+   shock_a_la2     = shock_a_la2[~np.isnan(shock_a_la2)]
+   stai1_a_la1     = stai1_a_la1[~np.isnan(stai1_a_la1)]
+   stai1_a_la2     = stai1_a_la2[~np.isnan(stai1_a_la2)]
+   stai2_a_la1     = stai2_a_la1[~np.isnan(stai2_a_la1)]
+   stai2_a_la2     = stai2_a_la2[~np.isnan(stai2_a_la2)]
+
+   age = ([np.nanmean(age_a_la1),np.nanstd(age_a_la1),np.nanmean(age_a_la2),np.nanstd(age_a_la2)] + list(ttest_ind(age_a_la1,age_a_la2)))
+   iq = ([np.nanmean(iq_a_la1),np.nanstd(iq_a_la1),np.nanmean(iq_a_la2),np.nanstd(iq_a_la2)] + list(ttest_ind(iq_a_la1,iq_a_la2)))
+   gda = ([np.nanmean(masq_gda_a_la1),np.nanstd(masq_gda_a_la1),np.nanmean(masq_gda_a_la2),np.nanstd(masq_gda_a_la2)] + list(ttest_ind(masq_gda_a_la1,masq_gda_a_la2)))
+   aa = ([np.nanmean(masq_aa_a_la1),np.nanstd(masq_aa_a_la1),np.nanmean(masq_aa_a_la2),np.nanstd(masq_aa_a_la2)] + list(ttest_ind(masq_aa_a_la1,masq_aa_a_la2)))
+   gdd = ([np.nanmean(masq_gdd_a_la1),np.nanstd(masq_gdd_a_la1),np.nanmean(masq_gdd_a_la2),np.nanstd(masq_gdd_a_la2)] + list(ttest_ind(masq_gdd_a_la1,masq_gdd_a_la2)))
+   ad = ([np.nanmean(masq_ad_a_la1),np.nanstd(masq_ad_a_la1),np.nanmean(masq_ad_a_la2),np.nanstd(masq_ad_a_la2)] + list(ttest_ind(masq_ad_a_la1,masq_ad_a_la2)))
+   shock = ([np.nanmean(shock_a_la1),np.nanstd(shock_a_la1),np.nanmean(shock_a_la2),np.nanstd(shock_a_la2)] + list(ttest_ind(shock_a_la1,shock_a_la2)))
+   stai1 = ([np.nanmean(stai1_a_la1),np.nanstd(stai1_a_la1),np.nanmean(stai1_a_la2),np.nanstd(stai1_a_la2)] + list(ttest_ind(stai1_a_la1,stai1_a_la2)))
+   stai2 = ([np.nanmean(stai2_a_la1),np.nanstd(stai2_a_la1),np.nanmean(stai2_a_la2),np.nanstd(stai2_a_la2)] + list(ttest_ind(stai2_a_la1,stai2_a_la2)))
 
 
+   print('*****************************************************')
+   print('Table S1')
+
+   tab=[age,iq,gda,aa,gdd,ad,shock,stai1,stai2]
+   print('\n'.join(list(map(lambda x : '%.2f (%.2f)\t%.2f (%.2f)\t%.2f\t%.6f'%(x[0],x[1],x[2],x[3],x[4],x[5]),tab))))
+
+
+   print('*****************************************************')
+   print('Gender proportion tests (See results)')
+   counts_la1 = np.array([np.sum(gender_a_la1),np.sum(gender_h_la1)])
+   nobs_la1   = np.array([len(gender_a_la1),len(gender_h_la1)])
+   print (proportions_ztest(counts_la1,nobs_la1))
+
+   counts_la2 = np.array([np.sum(gender_a_la2),np.sum(gender_h_la2)])
+   nobs_la2   = np.array([len(gender_a_la2),len(gender_h_la2)])
+   print (proportions_ztest(counts_la2,nobs_la2))
+  

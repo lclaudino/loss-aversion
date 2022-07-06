@@ -483,7 +483,6 @@ if __name__ == '__main__' :
          print('fits_healthy_%s_%s_m=%s.pkl'%(task,solver,'mu'))
 
          x0 = mu_ini
-         pdb.set_trace()
          patients = hpc_fit(data_patients, x0, solver, 'mu', 'fits_patients_%s_%s_m=%s.pkl'%(task,solver,'mu'))
          healthy = hpc_fit(data_healthy, x0, solver, 'mu', 'fits_healthy_%s_%s_m=%s.pkl'%(task,solver,'mu'))
 
@@ -758,9 +757,13 @@ if __name__ == '__main__' :
  print(np.array2string(100*np.nanstd(z_acc[:,len(params_healthy):],1), precision=1, separator='\n'))
 
 
- pdb.set_trace()
  print('****************************************************')
- print('Table %d'%(5 if task == 'LA1' else 6))
+ 
+ if solver != 'nelder-mead':
+    print('Table %d'%(5 if task == 'LA1' else 6))
+ else: 
+    print('Table S%d'%(2 if task == 'LA1' else 3))
+
  for ii in zip(htable.T[:,0:-2],htable.T[:,-2:],atable.T[:,0:-2],atable.T[:,-2:]):
     print(np.array2string(ii[0],precision=0, separator='\t &').replace('.','').replace('[','').replace(']','') + '\t &%.1f (%.1f)'%(ii[1][0],ii[1][1]) +'\t &'+\
           np.array2string(ii[2],precision=0, separator='\t &').replace('.','').replace('[','').replace(']','') + '\t &%.1f (%.1f)'%(ii[3][0],ii[3][1]))
